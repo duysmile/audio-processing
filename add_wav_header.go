@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/binary"
+	"fmt"
 	"github.com/go-audio/audio"
 	"github.com/go-audio/wav"
+	"github.com/mattetti/filebuffer"
 	"io"
 	"io/ioutil"
 	"log"
@@ -11,6 +15,35 @@ import (
 )
 
 func main() {
+	storeInMemAudio()
+	storeFileWav()
+}
+
+func storeInMemAudio() io.Reader {
+	pcm, err := os.Open("audio/audio.pcm")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	out := filebuffer.New(nil)
+
+	// audio format: 1 <-> PCM
+	e := wav.NewEncoder(out, 8000, 16, 1, 1)
+
+	audioBuf, err := newAudioIntFromBuffer(pcm)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := e.Write(audioBuf); err != nil {
+		log.Fatal(err)
+	}
+
+	out.Seek(0, 0)
+	return bytes.NewReader(out.Bytes())
+}
+
+func storeFileWav() io.Reader {
 	pcm, err := os.Open("audio/audio.pcm")
 	if err != nil {
 		log.Fatal(err)
@@ -41,15 +74,22 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// flush to disk if you want to store file
 	if err := e.Close(); err != nil {
 		log.Fatal(err)
 	}
+
+	content, _ := ioutil.ReadFile(out.Name())
+	fmt.Println("audio: ", string(content))
 
 	// can use temp file out for any purposes
 	// this file is .wav file with following format
 	// sample rate: 8000
 	// bit depth: 16
 	// num of channels: 1
+
+	// Use this reader to read audio
+	return bufio.NewReader(out)
 }
 
 func newAudioIntFromBuffer(r io.Reader) (*audio.IntBuffer, error) {

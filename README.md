@@ -3,6 +3,7 @@
 1. Add header `.wav` for pcm raw data
    - Dependencies:
      - github.com/go-audio/wav
+     - github.com/mattetti/filebuffer
    - Source
      - `add_wav_header.go`
    - Credit:
